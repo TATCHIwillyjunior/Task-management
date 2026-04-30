@@ -38,3 +38,28 @@ async function createTask(taskData) {
       status: taskData.status
     });
 
+// Assigning task to user 
+async function assignTaskToUser(userId, taskId) {
+  try {
+    const query = `
+      MATCH (u:User {id: $userId})
+      MATCH (t:Task {id: $taskId})
+      CREATE (u)-[:ASSIGNED_TO]->(t)
+      RETURN u, t
+    `;
+    const records = await executeWrite(query, {
+      userId: userId,
+      taskId: taskId
+    });
+    if (records.length === 0) {
+      throw new Error('User or Task not found');
+    }
+    return {
+      user: records[0]?.get('u')?.properties,
+      task: records[0]?.get('t')?.properties
+    };
+  } catch (error) {
+    console.error('Error assigning task:', error.message);
+    throw error;
+  }
+}
