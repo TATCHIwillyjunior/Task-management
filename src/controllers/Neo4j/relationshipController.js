@@ -85,3 +85,74 @@ async function markTaskAsBlocked(taskId, blockedByTaskId) {
     throw error;
   }
 }
+// the path traversal query 1 = task bloacking chain
+async function getBlockingTasksChain(taskId) {
+  try {
+    const query = `
+      MATCH (targetTask:Task {id: $taskId})
+      OPTIONAL MATCH path = (targetTask)-[:BLOCKED_BY*1..10]->(blocker:Task)
+      RETURN 
+        targetTask.title AS taskTitle,
+        targetTask.id AS taskId,
+        COUNT(DISTINCT blocker) AS blockingTaskCount,
+        COLLECT(DISTINCT {
+          blockingTaskId: blocker.id,
+          blockingTaskTitle: blocker.title,
+          blockingTaskStatus: blocker.status,
+          depth: LENGTH(path)
+        }) AS blockingTasks
+      ORDER BY blockingTaskCount DESC
+    `;
+    const records = await executeRead(query, { taskId: taskId });
+    if (records.length === 0) {
+      return {
+        taskTitle: 'Unknown',
+        taskId: taskId,
+        blockingTaskCount: 0,
+        blockingTasks: []
+      };
+    }
+    const result = records[0];
+    return {
+      taskTitle: result.get('taskTitle'),
+      taskId: result.get('taskId'),
+      blockingTaskCount: result.get('blockingTaskCount').toNumber(),
+      blockingTasks: result.get('blockingTasks')
+    };
+  } catch (error) {
+    console.error('Error getting blocking tasks:', error.message);
+    throw error;
+  } }
+// get user's assign task
+async function getUserAssignedTasks(userId) {
+  try {
+    const query = `
+      MATCH (u:User {id: $userId})-[:ASSIGNED_TO]->(t:Task)
+      RETURN 
+        u.username AS username,
+        COLLECT({
+          taskId: t.id,
+          taskTitle: t.title,
+          taskStatus: t.status
+        }) AS assignedTasks
+    `;
+
+    const records = await executeRead(query, { userId: userId });
+
+    if (records.length === 0) {
+      return {
+        username: 'Unknown',
+        assignedTasks: []
+      };
+    }
+
+    const result = records[0];
+    return {
+      username: result.get('username'),
+      assignedTasks: result.get('assignedTasks')
+    };
+  } catch (error) {
+    console.error('Error getting user tasks:', error.message);
+    throw error;
+  }
+}
