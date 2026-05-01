@@ -136,16 +136,13 @@ async function getUserAssignedTasks(userId) {
           taskStatus: t.status
         }) AS assignedTasks
     `;
-
     const records = await executeRead(query, { userId: userId });
-
     if (records.length === 0) {
       return {
         username: 'Unknown',
         assignedTasks: []
       };
     }
-
     const result = records[0];
     return {
       username: result.get('username'),
@@ -153,6 +150,119 @@ async function getUserAssignedTasks(userId) {
     };
   } catch (error) {
     console.error('Error getting user tasks:', error.message);
+    throw error;
+  }
+}
+//function to add user to project
+async function addUserToProject(userId, projectId) {
+  try {
+    const query = `
+      MATCH (u:User {id: $userId})
+      MATCH (p:Project {id: $projectId})
+      CREATE (u)-[:MEMBER_OF]->(p)
+      RETURN u, p
+    `;
+    const records = await executeWrite(query, {
+      userId: userId,
+      projectId: projectId
+    });
+    return {
+      user: records[0]?.get('u')?.properties,
+      project: records[0]?.get('p')?.properties
+    };
+  } catch (error) {
+    console.error('Error adding user to project:', error.message);
+    throw error;
+  }
+}
+//get project team
+async function getProjectTeam(projectId) {
+  try {
+    const query = `
+      MATCH (p:Project {id: $projectId})<-[:MEMBER_OF]-(u:User)
+      RETURN
+        p.name AS projectName,
+        COLLECT({
+          userId: u.id,
+          username: u.username,
+          email: u.email
+        }) AS teamMembers
+    `;
+    const records = await executeRead(query, { projectId: projectId });
+    if (records.length === 0) {
+      return {
+        projectName: 'Unknown',
+        teamMembers: []
+      };
+    }
+    const result = records[0];
+    return {
+      projectName: result.get('projectName'),
+      teamMembers: result.get('teamMembers')
+    };
+  } catch (error) {
+    console.error('Error getting project team:', error.message);
+    throw error;
+  }
+}
+//function for path traversal query 2=skill-based recommendation 
+async function recommendPersonForTask(skillRequired, excludeUserId = null) {
+  try {
+    let query = `
+      MATCH (requiredSkill:Skill {name: $skillRequired})
+      OPTIONAL MATCH (candidate:User)-[:HAS_SKILL]->(requiredSkill)
+      
+      OPTIONAL MATCH (candidate)-[:ASSIGNED_TO]->(assignedTask:Task)
+      WHERE assignedTask.status <> "done"
+      
+      OPTIONAL MATCH (candidate)-[:REPORTS_TO]->(manager:User)
+      
+      WITH candidate, manager,
+           COUNT(DISTINCT assignedTask) AS currentWorkload
+      
+      WHERE candidate IS NOT NULL
+    `;
+    if (excludeUserId) {
+      query += ` AND candidate.id <> $excludeUserId`;
+    }
+    query += `
+      RETURN 
+        candidate.username AS username,
+        candidate.id AS userId,
+        candidate.email AS email,
+        currentWorkload AS workload,
+        COLLECT(DISTINCT assignedTask.title)[0..3] AS currentTasks,
+        manager.username AS reportsTo,
+        CASE 
+          WHEN currentWorkload < 3 THEN "AVAILABLE"
+          WHEN currentWorkload < 6 THEN "MODERATE"
+          ELSE "OVERLOADED"
+        END AS workloadStatus,
+        (10 - currentWorkload) AS recommendationScore
+      
+      ORDER BY 
+        currentWorkload ASC,
+        candidate.username ASC
+      
+      LIMIT 5
+    `;
+    const params = { skillRequired: skillRequired };
+    if (excludeUserId) {
+      params.excludeUserId = excludeUserId;
+    }
+    const records = await executeRead(query, params);
+    return records.map(record => ({
+      username: record.get('username'),
+      userId: record.get('userId'),
+      email: record.get('email'),
+      workload: record.get('workload').toNumber(),
+      currentTasks: record.get('currentTasks'),
+      reportsTo: record.get('reportsTo'),
+      workloadStatus: record.get('workloadStatus'),
+      recommendationScore: record.get('recommendationScore')
+    }));
+  } catch (error) {
+    console.error('Error recommending person:', error.message);
     throw error;
   }
 }
