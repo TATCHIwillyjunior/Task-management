@@ -63,3 +63,25 @@ async function assignTaskToUser(userId, taskId) {
     throw error;
   }
 }
+//marking task as blocked
+async function markTaskAsBlocked(taskId, blockedByTaskId) {
+  try {
+    const query = `
+      MATCH (t:Task {id: $taskId})
+      MATCH (b:Task {id: $blockedByTaskId})
+      CREATE (t)-[:BLOCKED_BY]->(b)
+      RETURN t, b
+    `;
+    const records = await executeWrite(query, {
+      taskId: taskId,
+      blockedByTaskId: blockedByTaskId
+    });
+    return {
+      task: records[0]?.get('t')?.properties,
+      blockedBy: records[0]?.get('b')?.properties
+    };
+  } catch (error) {
+    console.error('Error marking task as blocked:', error.message);
+    throw error;
+  }
+}
