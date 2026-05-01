@@ -123,7 +123,7 @@ async function getBlockingTasksChain(taskId) {
     console.error('Error getting blocking tasks:', error.message);
     throw error;
   } }
-// get user's assign task
+// get user's assigned task
 async function getUserAssignedTasks(userId) {
   try {
     const query = `
@@ -266,3 +266,59 @@ async function recommendPersonForTask(skillRequired, excludeUserId = null) {
     throw error;
   }
 }
+// function for user skill relationship
+async function addUserSkill(userId, skillName) {
+  try {
+    const query = `
+      MATCH (u:User {id: $userId})
+      MERGE (s:Skill {name: $skillName})
+      CREATE (u)-[:HAS_SKILL]->(s)
+      RETURN u, s
+    `;
+    const records = await executeWrite(query, {
+      userId: userId,
+      skillName: skillName
+    });
+    return {
+      user: records[0]?.get('u')?.properties,
+      skill: records[0]?.get('s')?.properties
+    };
+  } catch (error) {
+    console.error('Error adding user skill:', error.message);
+    throw error;
+  }}
+// function to report hierarchy
+async function setUserManager(userId, managerId) {
+  try {
+    const query = `
+      MATCH (u:User {id: $userId})
+      MATCH (m:User {id: $managerId})
+      CREATE (u)-[:REPORTS_TO]->(m)
+      RETURN u, m
+    `;
+    const records = await executeWrite(query, {
+      userId: userId,
+      managerId: managerId
+    });
+    return {
+      user: records[0]?.get('u')?.properties,
+      manager: records[0]?.get('m')?.properties
+    };
+  } catch (error) {
+    console.error('Error setting user manager:', error.message);
+    throw error;
+  }}
+// export
+module.exports = {
+  createUser,
+  createTask,
+  assignTaskToUser,
+  markTaskAsBlocked,
+  getBlockingTasksChain,
+  getUserAssignedTasks,
+  addUserToProject,
+  getProjectTeam,
+  recommendPersonForTask,
+  addUserSkill,
+  setUserManager
+};
