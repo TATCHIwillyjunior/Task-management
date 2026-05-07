@@ -15,14 +15,14 @@ A polyglot NoSQL Task Management API built with **MongoDB**, **Neo4j**, and **Re
               ┌────────────────────────┼────────────────────────┐
               │                        │                        │
               ▼                        ▼                        ▼
-   ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-   │    MongoDB       │     │     Neo4j        │     │     Redis       │
-   │  (Document DB)  │     │   (Graph DB)     │     │   (Cache/KV)   │
+   ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+   │    MongoDB      │     │     Neo4j        │     │     Redis       │
+   │  (Document DB)  │     │   (Graph DB)     │     │   (Cache/KV)    │
    │                 │     │                  │     │                 │
    │ - Tasks         │     │ - Relationships  │     │ - Task Cache    │
    │ - Projects      │     │ - Dependencies   │     │ - Sessions      │
    │ - Users         │     │ - User-Task edges│     │ - Leaderboard   │
-   └─────────────────┘     └─────────────────┘     │ - Activity Feed │
+   └─────────────────┘     └──────────────────┘     │ - Activity Feed │
                                                     │ - Urgent Queue  │
                                                     │ - Tags & Counts │
                                                     └─────────────────┘
@@ -85,19 +85,53 @@ Task-management/
 | GET    | `/`        | API info and available routes      |
 | GET    | `/health`  | Health check for all three databases |
 
-### MongoDB — `/api/tasks`, `/api/projects`, `/api/users`
+### MongoDB — Tasks `/api/tasks`
 
-| Method | Route           | Description              |
-|--------|-----------------|--------------------------|
-| GET    | `/api/tasks`    | Task CRUD operations     |
-| GET    | `/api/projects` | Project management       |
-| GET    | `/api/users`    | User management          |
+| Method | Route                            | Description                          |
+|--------|----------------------------------|--------------------------------------|
+| POST   | `/api/tasks`                     | Create a new task                    |
+| GET    | `/api/tasks`                     | Get all tasks (filter by status, priority, projectId, createdBy) |
+| GET    | `/api/tasks/:id`                 | Get task by ID                       |
+| PUT    | `/api/tasks/:id`                 | Update task                          |
+| DELETE | `/api/tasks/:id`                 | Delete task                          |
+| POST   | `/api/tasks/:id/comment`         | Add comment to task                  |
+| GET    | `/api/tasks/:id/comments`        | Get all comments on a task           |
+| GET    | `/api/tasks/analytics/dashboard` | Aggregation: task metrics by status (last 30 days) |
+| GET    | `/api/tasks/analytics/overdue`   | Aggregation: overdue tasks grouped by priority |
+
+### MongoDB — Projects `/api/projects`
+
+| Method | Route               | Description                          |
+|--------|---------------------|--------------------------------------|
+| POST   | `/api/projects`     | Create a new project                 |
+| GET    | `/api/projects`     | Get all projects (filter by createdBy) |
+| GET    | `/api/projects/:id` | Get project by ID                    |
+| PUT    | `/api/projects/:id` | Update project                       |
+| DELETE | `/api/projects/:id` | Delete project                       |
+
+### MongoDB — Users `/api/users`
+
+| Method | Route            | Description                          |
+|--------|------------------|--------------------------------------|
+| POST   | `/api/users`     | Create a new user                    |
+| GET    | `/api/users`     | Get all users                        |
+| GET    | `/api/users/:id` | Get user by ID                       |
+| PUT    | `/api/users/:id` | Update user                          |
+| DELETE | `/api/users/:id` | Delete user                          |
 
 ### Neo4j — `/api/relationships`
 
-| Method | Route                  | Description                    |
-|--------|------------------------|--------------------------------|
-| *      | `/api/relationships`   | Graph relationship operations  |
+| Method | Route                                  | Description                                        |
+|--------|----------------------------------------|----------------------------------------------------|
+| POST   | `/api/relationships/assign`            | Assign a task to a user (`ASSIGNED_TO` edge)       |
+| POST   | `/api/relationships/block`             | Mark a task as blocked by another (`BLOCKED_BY`)   |
+| POST   | `/api/relationships/project/member`    | Add a user to a project (`MEMBER_OF`)              |
+| POST   | `/api/relationships/skill`             | Add a skill to a user (`HAS_SKILL`)                |
+| POST   | `/api/relationships/manager`           | Set a user's manager (`REPORTS_TO`)                |
+| GET    | `/api/relationships/user/:userId/tasks`| Get all tasks assigned to a user                   |
+| GET    | `/api/relationships/task/:taskId/blocking` | Path traversal: full blocking chain for a task |
+| GET    | `/api/relationships/project/:id/team`  | Get all members of a project                       |
+| GET    | `/api/relationships/recommend`         | Path traversal: recommend user by skill (`?skill=`) |
 
 ### Redis — `/api/redis`
 
@@ -150,36 +184,52 @@ Task-management/
 - [Docker](https://www.docker.com/) and Docker Compose
 - [Node.js](https://nodejs.org/) v18+
 
-### Run with Docker (recommended)
+### Option 1 — Full Docker (recommended)
+
+Everything runs inside Docker: MongoDB, Neo4j, Redis, and the API.
 
 ```bash
-# 1. Copy environment template
-cp .env.example .env
-
-# 2. Start all services (MongoDB, Neo4j, Redis, API)
+# 1. Start all 4 services (databases + API)
 docker-compose up -d
 
-# 3. Seed the databases with sample data
-npm run seed
-
-# 4. Start dev server (auto-restarts on file change)
-npm run dev
+# 2. Wait for containers to be healthy, then seed sample data
+docker exec task-manager-api npm run seed
 ```
 
-The API will be available at `http://localhost:3000`.
+The API starts automatically via `nodemon` inside the `api` container.
+It will be available at **`http://localhost:5000`**.
 
-### Run locally (without Docker)
+> Neo4j browser UI: `http://localhost:7474` (user: `neo4j`, password: `password`)
+
+---
+
+### Option 2 — Databases in Docker, API runs locally
+
+Run only the three databases in Docker and start the API on your machine. Useful when you want faster restarts during development.
 
 ```bash
-# 1. Install dependencies
+# 1. Start only the database services
+docker-compose up -d mongodb neo4j redis
+
+# 2. Install Node dependencies
 npm install
 
-# 2. Copy and edit environment variables
+# 3. Copy environment file (already configured for localhost)
 cp .env.example .env
 
-# 3. Start dev server (auto-restarts on file change)
+# 4. Seed the databases
+npm run seed
+
+# 5. Start the API
 npm run dev
 ```
+
+The API will be available at **`http://localhost:3000`**.
+
+> The `.env.example` already points to `localhost` for all three databases,
+> which matches the ports Docker exposes (`27017`, `7687`, `6379`).
+
+---
 
 ### Available scripts
 
@@ -194,17 +244,19 @@ npm run dev
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and adjust the values:
+Copy `.env.example` to `.env`. The defaults are set for **Option 2** (API runs locally, databases in Docker):
 
 ```env
 NODE_ENV=development
-PORT=5000
-MONGODB_URI=mongodb://admin:password@mongodb:27017/taskdb
-NEO4J_URI=bolt://neo4j:7687
+PORT=3000
+MONGODB_URI=mongodb://admin:password@localhost:27017/taskdb?authSource=admin
+NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
-REDIS_URL=redis://redis:6379
+REDIS_URL=redis://localhost:6379
 ```
+
+> For **Option 1** (full Docker), environment variables are injected directly by `docker-compose.yml` and the `.env` file is not used by the container.
 
 ---
 
@@ -252,6 +304,14 @@ The Dockerfile uses a **multi-stage build** (builder → production) with a non-
 ---
 
 ## Changelog
+
+### `dev-willy/redis` — fix Docker startup and seeding
+
+- **`docker-compose.yml`** — removed two broken volume mounts (`./scripts/mongo-init.js` and `./scripts/neo4j-init.cypher`) that were empty directories on disk, causing MongoDB to crash on startup with `EISDIR: illegal operation on a directory`.
+- **`docker-compose.yml`** — added `?authSource=admin` to `MONGODB_URI` in the `api` service environment. Without it the driver looked for the `admin` user in the `taskdb` database instead of the `admin` database, causing `Authentication failed` when running `npm run seed`.
+- **`scripts/`** — deleted the two empty directories (`mongo-init.js`, `neo4j-init.cypher`) that were mistakenly created as directories instead of files. Seeding is handled entirely by `seed-db.js`.
+
+---
 
 ### `dev-willy/redis` — rebase onto develop
 
