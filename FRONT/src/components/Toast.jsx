@@ -1,17 +1,18 @@
+//FRONT/src/components/Toast.jsx
 import { useState, useCallback, useEffect, useRef } from 'react';
- 
+
 let _addToast = null;
- 
+
 export function useToast() {
   return useCallback((msg, type = 'info') => {
     _addToast?.(msg, type);
   }, []);
 }
- 
+
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
   const id = useRef(0);
- 
+
   useEffect(() => {
     _addToast = (msg, type) => {
       const key = ++id.current;
@@ -20,7 +21,7 @@ export function ToastContainer() {
     };
     return () => { _addToast = null; };
   }, []);
- 
+
   return (
     <div className="toast-container">
       {toasts.map(t => (

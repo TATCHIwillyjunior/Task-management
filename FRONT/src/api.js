@@ -1,4 +1,4 @@
-//FRONT
+//FRONT/src/api.js
 // Centralised fetch wrapper — all paths are relative so Vite proxy handles CORS
 export async function req(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
