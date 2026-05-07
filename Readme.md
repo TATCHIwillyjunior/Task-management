@@ -161,9 +161,12 @@ docker-compose up -d
 
 # 3. Seed the databases with sample data
 npm run seed
+
+# 4. Start dev server (auto-restarts on file change)
+npm run dev
 ```
 
-The API will be available at `http://localhost:5000`.
+The API will be available at `http://localhost:3000`.
 
 ### Run locally (without Docker)
 
@@ -249,6 +252,17 @@ The Dockerfile uses a **multi-stage build** (builder → production) with a non-
 ---
 
 ## Changelog
+
+### `dev-willy/redis` — rebase onto develop
+
+- Rebased `dev-willy/redis` onto `origin/develop` to pull in changes merged by Kelyan (MongoDB) and Fred (Neo4j).
+- Resolved conflicts in 4 files — all caused by mismatched `require` paths and informal comments on the develop branch:
+  - **`src/controllers/MongoDb/taskController.js`** — kept correct `require('../../db/mongodb_db/mongodb_db')` path and preserved full function set (`addComment`, `getDashboardMetrics`, `getOverdueTasksAlert`) that was missing from develop.
+  - **`src/controllers/Neo4j/relationshipController.js`** — kept correct `require('../../db/neo4j_db/neo4j_db')` path and restored missing `return` statement in `createTask`.
+  - **`src/db/neo4j_db/neo4j_db.js`** — kept formatted section headers over informal inline comments.
+  - **`src/routes/mongodbRoute/mongodbRoute_tasks.js`** — kept correct `require('../../controllers/MongoDb/taskController')` path.
+
+---
 
 ### `dev-willy/redis` — feat(redis)
 
