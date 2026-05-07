@@ -1,6 +1,0 @@
-node_modules/
-FRONT/node_modules/
-FRONT/dist/
-BACK/node_modules/
-.env
-*.log
