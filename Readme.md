@@ -184,36 +184,52 @@ Task-management/
 - [Docker](https://www.docker.com/) and Docker Compose
 - [Node.js](https://nodejs.org/) v18+
 
-### Run with Docker (recommended)
+### Option 1 — Full Docker (recommended)
+
+Everything runs inside Docker: MongoDB, Neo4j, Redis, and the API.
 
 ```bash
-# 1. Copy environment template
-cp .env.example .env
-
-# 2. Start all services (MongoDB, Neo4j, Redis, API)
+# 1. Start all 4 services (databases + API)
 docker-compose up -d
 
-# 3. Seed the databases with sample data
-npm run seed
-
-# 4. Start dev server (auto-restarts on file change)
-npm run dev
+# 2. Wait for containers to be healthy, then seed sample data
+docker exec task-manager-api npm run seed
 ```
 
-The API will be available at `http://localhost:3000`.
+The API starts automatically via `nodemon` inside the `api` container.
+It will be available at **`http://localhost:5000`**.
 
-### Run locally (without Docker)
+> Neo4j browser UI: `http://localhost:7474` (user: `neo4j`, password: `password`)
+
+---
+
+### Option 2 — Databases in Docker, API runs locally
+
+Run only the three databases in Docker and start the API on your machine. Useful when you want faster restarts during development.
 
 ```bash
-# 1. Install dependencies
+# 1. Start only the database services
+docker-compose up -d mongodb neo4j redis
+
+# 2. Install Node dependencies
 npm install
 
-# 2. Copy and edit environment variables
+# 3. Copy environment file (already configured for localhost)
 cp .env.example .env
 
-# 3. Start dev server (auto-restarts on file change)
+# 4. Seed the databases
+npm run seed
+
+# 5. Start the API
 npm run dev
 ```
+
+The API will be available at **`http://localhost:3000`**.
+
+> The `.env.example` already points to `localhost` for all three databases,
+> which matches the ports Docker exposes (`27017`, `7687`, `6379`).
+
+---
 
 ### Available scripts
 
@@ -228,17 +244,19 @@ npm run dev
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and adjust the values:
+Copy `.env.example` to `.env`. The defaults are set for **Option 2** (API runs locally, databases in Docker):
 
 ```env
 NODE_ENV=development
-PORT=5000
-MONGODB_URI=mongodb://admin:password@mongodb:27017/taskdb
-NEO4J_URI=bolt://neo4j:7687
+PORT=3000
+MONGODB_URI=mongodb://admin:password@localhost:27017/taskdb?authSource=admin
+NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
-REDIS_URL=redis://redis:6379
+REDIS_URL=redis://localhost:6379
 ```
+
+> For **Option 1** (full Docker), environment variables are injected directly by `docker-compose.yml` and the `.env` file is not used by the container.
 
 ---
 
