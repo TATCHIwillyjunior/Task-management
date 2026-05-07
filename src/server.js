@@ -94,10 +94,10 @@ app.get('/health', async (req, res) => {
 app.use('/api/tasks', require('./routes/mongodbRoute/mongodbRoute_tasks'));
 
 // Project routes (keylan) - for project management and task grouping
-app.use('/api/projects', require('./routes/mongodbRoute/mongodbRoute_tasks'));
+app.use('/api/projects', require('./routes/mongodbRoute/mongodbRoute_projects'));
 
 // User routes (keylan) - for user management and authentication
-app.use('/api/users', require('./routes/mongodbRoute/mongodbRoute_tasks'));
+app.use('/api/users', require('./routes/mongodbRoute/mongodbRoute_users'));
 
 // Relationship routes (Fred) - for Neo4j graph relationships
 app.use('/api/relationships', require('./routes/neo4jRoute/neo4jRoute_relationships'));

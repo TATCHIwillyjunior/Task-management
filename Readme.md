@@ -85,19 +85,53 @@ Task-management/
 | GET    | `/`        | API info and available routes      |
 | GET    | `/health`  | Health check for all three databases |
 
-### MongoDB — `/api/tasks`, `/api/projects`, `/api/users`
+### MongoDB — Tasks `/api/tasks`
 
-| Method | Route           | Description              |
-|--------|-----------------|--------------------------|
-| GET    | `/api/tasks`    | Task CRUD operations     |
-| GET    | `/api/projects` | Project management       |
-| GET    | `/api/users`    | User management          |
+| Method | Route                            | Description                          |
+|--------|----------------------------------|--------------------------------------|
+| POST   | `/api/tasks`                     | Create a new task                    |
+| GET    | `/api/tasks`                     | Get all tasks (filter by status, priority, projectId, createdBy) |
+| GET    | `/api/tasks/:id`                 | Get task by ID                       |
+| PUT    | `/api/tasks/:id`                 | Update task                          |
+| DELETE | `/api/tasks/:id`                 | Delete task                          |
+| POST   | `/api/tasks/:id/comment`         | Add comment to task                  |
+| GET    | `/api/tasks/:id/comments`        | Get all comments on a task           |
+| GET    | `/api/tasks/analytics/dashboard` | Aggregation: task metrics by status (last 30 days) |
+| GET    | `/api/tasks/analytics/overdue`   | Aggregation: overdue tasks grouped by priority |
+
+### MongoDB — Projects `/api/projects`
+
+| Method | Route               | Description                          |
+|--------|---------------------|--------------------------------------|
+| POST   | `/api/projects`     | Create a new project                 |
+| GET    | `/api/projects`     | Get all projects (filter by createdBy) |
+| GET    | `/api/projects/:id` | Get project by ID                    |
+| PUT    | `/api/projects/:id` | Update project                       |
+| DELETE | `/api/projects/:id` | Delete project                       |
+
+### MongoDB — Users `/api/users`
+
+| Method | Route            | Description                          |
+|--------|------------------|--------------------------------------|
+| POST   | `/api/users`     | Create a new user                    |
+| GET    | `/api/users`     | Get all users                        |
+| GET    | `/api/users/:id` | Get user by ID                       |
+| PUT    | `/api/users/:id` | Update user                          |
+| DELETE | `/api/users/:id` | Delete user                          |
 
 ### Neo4j — `/api/relationships`
 
-| Method | Route                  | Description                    |
-|--------|------------------------|--------------------------------|
-| *      | `/api/relationships`   | Graph relationship operations  |
+| Method | Route                                  | Description                                        |
+|--------|----------------------------------------|----------------------------------------------------|
+| POST   | `/api/relationships/assign`            | Assign a task to a user (`ASSIGNED_TO` edge)       |
+| POST   | `/api/relationships/block`             | Mark a task as blocked by another (`BLOCKED_BY`)   |
+| POST   | `/api/relationships/project/member`    | Add a user to a project (`MEMBER_OF`)              |
+| POST   | `/api/relationships/skill`             | Add a skill to a user (`HAS_SKILL`)                |
+| POST   | `/api/relationships/manager`           | Set a user's manager (`REPORTS_TO`)                |
+| GET    | `/api/relationships/user/:userId/tasks`| Get all tasks assigned to a user                   |
+| GET    | `/api/relationships/task/:taskId/blocking` | Path traversal: full blocking chain for a task |
+| GET    | `/api/relationships/project/:id/team`  | Get all members of a project                       |
+| GET    | `/api/relationships/recommend`         | Path traversal: recommend user by skill (`?skill=`) |
 
 ### Redis — `/api/redis`
 
