@@ -4,9 +4,9 @@
 
 const express = require('express');
 const dotenv = require('dotenv');
-const { connectMongoDB, getDB } = require('./db/mongodb_db');
-const { connectNeo4j, getNeo4jDriver } = require('./db/neo4j_db');
-const { connectRedis, getRedisClient } = require('./db/redis_db');
+const { connectMongoDB, getDB } = require('./db/mongodb_db/mongodb_db');
+const { connectNeo4j, getNeo4jDriver } = require('./db/neo4j_db/neo4j_db');
+const { connectRedis, getRedisClient } = require('./db/redis_db/redis_db');
 
 // Load environment variables
 dotenv.config();
@@ -91,19 +91,19 @@ app.get('/health', async (req, res) => {
 // ============================================
 
 // Task routes (keylan) - for task CRUD operations and management
-app.use('/api/tasks', require('./routes/mongodbRoute'));
+app.use('/api/tasks', require('./routes/mongodbRoute/mongodbRoute_tasks'));
 
 // Project routes (keylan) - for project management and task grouping
-app.use('/api/projects', require('./routes/mongodbRoute'));
+app.use('/api/projects', require('./routes/mongodbRoute/mongodbRoute_tasks'));
 
 // User routes (keylan) - for user management and authentication
-app.use('/api/users', require('./routes/mongodbRoute'));
+app.use('/api/users', require('./routes/mongodbRoute/mongodbRoute_tasks'));
 
 // Relationship routes (Fred) - for Neo4j graph relationships
-app.use('/api/relationships', require('./routes/neo4jRoute'));
+app.use('/api/relationships', require('./routes/neo4jRoute/neo4jRoute_relationships'));
 
 // Redis routes (Willy) - for Redis operations
-app.use('/api/redis', require('./routes/RedisRoute'));
+app.use('/api/redis', require('./routes/RedisRoute/RedisRoute_redis'));
 
 // ============================================
 // ROOT ENDPOINT
