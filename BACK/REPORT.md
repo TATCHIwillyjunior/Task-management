@@ -13,20 +13,67 @@ The API is served by Express.js and the full stack runs with a single `docker-co
 
 ---
 
+## How to Run
+
+### Prerequisites
+- [Docker](https://www.docker.com/) and Docker Compose
+- [Node.js](https://nodejs.org/) v18+
+
+### Option 1 — Full Docker (recommended)
+
+```bash
+# Start all 4 services (MongoDB, Neo4j, Redis, API)
+docker-compose up -d
+
+# Seed the databases with sample data
+docker exec task-manager-api npm run seed
+```
+
+API available at `http://localhost:5000`
+
+### Option 2 — Databases in Docker, API local
+
+```bash
+# Start only the three databases
+docker-compose up -d mongodb neo4j redis
+
+# Install dependencies and configure environment
+npm install
+cp .env.example .env
+
+# Seed then start the API
+npm run seed
+npm run dev
+```
+
+API available at `http://localhost:3000`
+
+### Sample Data
+
+Running `npm run seed` populates all three databases:
+- **MongoDB:** 5 users, 4 projects, 9 tasks
+- **Neo4j:** 5 user nodes, 9 task nodes, 4 project nodes, 8 skill nodes + all relationships
+- **Redis:** sessions, user profiles, leaderboard, activity feeds, tag sets
+
+---
+
 ## Database Use Cases
 
 ### MongoDB
 
 **Role:** Primary document store for all structured application data — tasks, projects, and users. Each entity is stored as a JSON document in its own collection. MongoDB was chosen because tasks naturally have nested data (comments, metadata) and flexible schemas that grow over time without migrations.
 
-Collections:
-- `tasks` — title, description, status, priority, dueDate, projectId, createdBy, comments[]
-- `projects` — name, description, createdBy, members[]
-- `users` — username, email, password, role
-
-Indexes are created on startup for performance: `projectId`, `createdBy`, `status`, `dueDate` on tasks; `email` (unique) on users.
-
 **Driver used:** `mongodb` (native Node.js driver — no Mongoose)
+
+**Collections and API endpoints:**
+
+| Collection | Fields | Endpoints |
+|---|---|---|
+| `tasks` | title, description, status, priority, dueDate, projectId, createdBy, comments[] | `POST/GET /api/tasks`, `GET/PUT/DELETE /api/tasks/:id`, comments via `/api/tasks/:id/comment` |
+| `projects` | name, description, createdBy, members[] | `POST/GET /api/projects`, `GET/PUT/DELETE /api/projects/:id` |
+| `users` | username, email, password, role | `POST/GET /api/users`, `GET/PUT/DELETE /api/users/:id` |
+
+Indexes created on startup: `projectId`, `createdBy`, `status`, `dueDate` on tasks; `email` (unique) and `username` on users; `createdBy` on projects.
 
 ---
 

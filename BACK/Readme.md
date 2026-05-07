@@ -15,14 +15,14 @@ A polyglot NoSQL Task Management API built with **MongoDB**, **Neo4j**, and **Re
               ┌────────────────────────┼────────────────────────┐
               │                        │                        │
               ▼                        ▼                        ▼
-   ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-   │    MongoDB       │     │     Neo4j        │     │     Redis       │
-   │  (Document DB)  │     │   (Graph DB)     │     │   (Cache/KV)   │
+   ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+   │    MongoDB      │     │     Neo4j        │     │     Redis       │
+   │  (Document DB)  │     │   (Graph DB)     │     │   (Cache/KV)    │
    │                 │     │                  │     │                 │
    │ - Tasks         │     │ - Relationships  │     │ - Task Cache    │
    │ - Projects      │     │ - Dependencies   │     │ - Sessions      │
    │ - Users         │     │ - User-Task edges│     │ - Leaderboard   │
-   └─────────────────┘     └─────────────────┘     │ - Activity Feed │
+   └─────────────────┘     └──────────────────┘     │ - Activity Feed │
                                                     │ - Urgent Queue  │
                                                     │ - Tags & Counts │
                                                     └─────────────────┘
@@ -304,6 +304,14 @@ The Dockerfile uses a **multi-stage build** (builder → production) with a non-
 ---
 
 ## Changelog
+
+### `dev-willy/redis` — fix Docker startup and seeding
+
+- **`docker-compose.yml`** — removed two broken volume mounts (`./scripts/mongo-init.js` and `./scripts/neo4j-init.cypher`) that were empty directories on disk, causing MongoDB to crash on startup with `EISDIR: illegal operation on a directory`.
+- **`docker-compose.yml`** — added `?authSource=admin` to `MONGODB_URI` in the `api` service environment. Without it the driver looked for the `admin` user in the `taskdb` database instead of the `admin` database, causing `Authentication failed` when running `npm run seed`.
+- **`scripts/`** — deleted the two empty directories (`mongo-init.js`, `neo4j-init.cypher`) that were mistakenly created as directories instead of files. Seeding is handled entirely by `seed-db.js`.
+
+---
 
 ### `dev-willy/redis` — rebase onto develop
 
