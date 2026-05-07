@@ -1,6 +1,11 @@
 node_modules/
 .env
 .DS_Store
+// scripts/seed-db.js
+
 coverage/
 dist/
 *.log
+
+// docker-compose.yml
+// Dockerfile
