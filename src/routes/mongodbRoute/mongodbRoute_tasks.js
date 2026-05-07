@@ -1,13 +1,13 @@
-// src/routes/mongodbRoute/mongodbRoute_tasks.js
-// peron A Complete task routes for MongoDB
-// Task crud routes for MongoDB
+// src/routes/tasks.js
+// Person A: Complete Task Routes with all endpoints
+
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
+const taskController = require('../../controllers/MongoDb/taskController');
 
-
+// ============================================
 // TASK CRUD ENDPOINTS
-
+// ============================================
 
 // POST /api/tasks - Create new task
 router.post('/', async (req, res) => {
@@ -42,6 +42,7 @@ router.post('/', async (req, res) => {
     });
   }
 });
+
 // GET /api/tasks - Get all tasks with optional filters
 router.get('/', async (req, res) => {
   try {

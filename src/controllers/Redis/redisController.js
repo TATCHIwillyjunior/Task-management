@@ -10,7 +10,7 @@ const {
   lPush, lRange,
   sAdd, sMembers,
   incr, flushAll
-} = require('../db/redis_db/redis_db.js');
+} = require('../../db/redis_db/redis_db.js');
 
 // ============================================
 // CACHE MANAGEMENT

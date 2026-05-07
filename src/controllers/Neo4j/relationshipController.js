@@ -1,5 +1,13 @@
-const { getNeo4jDriver, executeQuery, executeWrite, executeRead } = require('../db/neo4j');
-//Create Nodes function
+// src/controllers/relationshipController.js
+// Person B: Complete Relationship Controller - Neo4j Operations
+// Handles all graph relationship operations
+
+const { getNeo4jDriver, executeQuery, executeWrite, executeRead } = require('../../db/neo4j_db/neo4j_db');
+
+// ============================================
+// CREATE NODES
+// ============================================
+
 async function createUser(userData) {
   try {
     const query = `
@@ -10,11 +18,13 @@ async function createUser(userData) {
       })
       RETURN u
     `;
+
     const records = await executeWrite(query, {
       id: userData.id,
       username: userData.username,
       email: userData.email
     });
+
     return records[0]?.get('u')?.properties;
   } catch (error) {
     console.error('Error creating user:', error.message);
@@ -32,13 +42,24 @@ async function createTask(taskData) {
       })
       RETURN t
     `;
+
     const records = await executeWrite(query, {
       id: taskData.id,
       title: taskData.title,
       status: taskData.status
     });
 
-// Assigning task to user 
+    return records[0]?.get('t')?.properties;
+  } catch (error) {
+    console.error('Error creating task:', error.message);
+    throw error;
+  }
+}
+
+// ============================================
+// ASSIGN TASK TO USER
+// ============================================
+
 async function assignTaskToUser(userId, taskId) {
   try {
     const query = `
@@ -47,13 +68,16 @@ async function assignTaskToUser(userId, taskId) {
       CREATE (u)-[:ASSIGNED_TO]->(t)
       RETURN u, t
     `;
+
     const records = await executeWrite(query, {
       userId: userId,
       taskId: taskId
     });
+
     if (records.length === 0) {
       throw new Error('User or Task not found');
     }
+
     return {
       user: records[0]?.get('u')?.properties,
       task: records[0]?.get('t')?.properties
@@ -63,7 +87,11 @@ async function assignTaskToUser(userId, taskId) {
     throw error;
   }
 }
-//marking task as blocked
+
+// ============================================
+// MARK TASK AS BLOCKED
+// ============================================
+
 async function markTaskAsBlocked(taskId, blockedByTaskId) {
   try {
     const query = `
@@ -72,10 +100,12 @@ async function markTaskAsBlocked(taskId, blockedByTaskId) {
       CREATE (t)-[:BLOCKED_BY]->(b)
       RETURN t, b
     `;
+
     const records = await executeWrite(query, {
       taskId: taskId,
       blockedByTaskId: blockedByTaskId
     });
+
     return {
       task: records[0]?.get('t')?.properties,
       blockedBy: records[0]?.get('b')?.properties
@@ -85,7 +115,11 @@ async function markTaskAsBlocked(taskId, blockedByTaskId) {
     throw error;
   }
 }
-// the path traversal query 1 = task bloacking chain
+
+// ============================================
+// PATH TRAVERSAL QUERY 1: Task Blocking Chain
+// ============================================
+
 async function getBlockingTasksChain(taskId) {
   try {
     const query = `
@@ -103,7 +137,9 @@ async function getBlockingTasksChain(taskId) {
         }) AS blockingTasks
       ORDER BY blockingTaskCount DESC
     `;
+
     const records = await executeRead(query, { taskId: taskId });
+
     if (records.length === 0) {
       return {
         taskTitle: 'Unknown',
@@ -112,6 +148,7 @@ async function getBlockingTasksChain(taskId) {
         blockingTasks: []
       };
     }
+
     const result = records[0];
     return {
       taskTitle: result.get('taskTitle'),
@@ -122,8 +159,13 @@ async function getBlockingTasksChain(taskId) {
   } catch (error) {
     console.error('Error getting blocking tasks:', error.message);
     throw error;
-  } }
-// get user's assigned task
+  }
+}
+
+// ============================================
+// GET USER'S ASSIGNED TASKS
+// ============================================
+
 async function getUserAssignedTasks(userId) {
   try {
     const query = `
@@ -136,13 +178,16 @@ async function getUserAssignedTasks(userId) {
           taskStatus: t.status
         }) AS assignedTasks
     `;
+
     const records = await executeRead(query, { userId: userId });
+
     if (records.length === 0) {
       return {
         username: 'Unknown',
         assignedTasks: []
       };
     }
+
     const result = records[0];
     return {
       username: result.get('username'),
@@ -153,7 +198,11 @@ async function getUserAssignedTasks(userId) {
     throw error;
   }
 }
-//function to add user to project
+
+// ============================================
+// ADD USER TO PROJECT
+// ============================================
+
 async function addUserToProject(userId, projectId) {
   try {
     const query = `
@@ -162,10 +211,12 @@ async function addUserToProject(userId, projectId) {
       CREATE (u)-[:MEMBER_OF]->(p)
       RETURN u, p
     `;
+
     const records = await executeWrite(query, {
       userId: userId,
       projectId: projectId
     });
+
     return {
       user: records[0]?.get('u')?.properties,
       project: records[0]?.get('p')?.properties
@@ -175,7 +226,11 @@ async function addUserToProject(userId, projectId) {
     throw error;
   }
 }
-//get project team
+
+// ============================================
+// GET PROJECT TEAM
+// ============================================
+
 async function getProjectTeam(projectId) {
   try {
     const query = `
@@ -188,13 +243,16 @@ async function getProjectTeam(projectId) {
           email: u.email
         }) AS teamMembers
     `;
+
     const records = await executeRead(query, { projectId: projectId });
+
     if (records.length === 0) {
       return {
         projectName: 'Unknown',
         teamMembers: []
       };
     }
+
     const result = records[0];
     return {
       projectName: result.get('projectName'),
@@ -205,7 +263,11 @@ async function getProjectTeam(projectId) {
     throw error;
   }
 }
-//function for path traversal query 2=skill-based recommendation 
+
+// ============================================
+// PATH TRAVERSAL QUERY 2: Skill-Based Recommendation
+// ============================================
+
 async function recommendPersonForTask(skillRequired, excludeUserId = null) {
   try {
     let query = `
@@ -222,9 +284,11 @@ async function recommendPersonForTask(skillRequired, excludeUserId = null) {
       
       WHERE candidate IS NOT NULL
     `;
+
     if (excludeUserId) {
       query += ` AND candidate.id <> $excludeUserId`;
     }
+
     query += `
       RETURN 
         candidate.username AS username,
@@ -246,11 +310,14 @@ async function recommendPersonForTask(skillRequired, excludeUserId = null) {
       
       LIMIT 5
     `;
+
     const params = { skillRequired: skillRequired };
     if (excludeUserId) {
       params.excludeUserId = excludeUserId;
     }
+
     const records = await executeRead(query, params);
+
     return records.map(record => ({
       username: record.get('username'),
       userId: record.get('userId'),
@@ -266,7 +333,11 @@ async function recommendPersonForTask(skillRequired, excludeUserId = null) {
     throw error;
   }
 }
-// function for user skill relationship
+
+// ============================================
+// USER SKILL RELATIONSHIP
+// ============================================
+
 async function addUserSkill(userId, skillName) {
   try {
     const query = `
@@ -275,10 +346,12 @@ async function addUserSkill(userId, skillName) {
       CREATE (u)-[:HAS_SKILL]->(s)
       RETURN u, s
     `;
+
     const records = await executeWrite(query, {
       userId: userId,
       skillName: skillName
     });
+
     return {
       user: records[0]?.get('u')?.properties,
       skill: records[0]?.get('s')?.properties
@@ -286,8 +359,13 @@ async function addUserSkill(userId, skillName) {
   } catch (error) {
     console.error('Error adding user skill:', error.message);
     throw error;
-  }}
-// function to report hierarchy
+  }
+}
+
+// ============================================
+// REPORTING HIERARCHY
+// ============================================
+
 async function setUserManager(userId, managerId) {
   try {
     const query = `
@@ -296,10 +374,12 @@ async function setUserManager(userId, managerId) {
       CREATE (u)-[:REPORTS_TO]->(m)
       RETURN u, m
     `;
+
     const records = await executeWrite(query, {
       userId: userId,
       managerId: managerId
     });
+
     return {
       user: records[0]?.get('u')?.properties,
       manager: records[0]?.get('m')?.properties
@@ -307,8 +387,13 @@ async function setUserManager(userId, managerId) {
   } catch (error) {
     console.error('Error setting user manager:', error.message);
     throw error;
-  }}
-// export
+  }
+}
+
+// ============================================
+// EXPORT
+// ============================================
+
 module.exports = {
   createUser,
   createTask,
