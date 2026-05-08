@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { req } from '../api';
 import { useToast } from '../components/Toast';
 import Modal from '../components/Modal';
+import CopyId from '../components/CopyId';
 
 function StatusBadge({ s }) { return <span className={`badge badge-${s}`}>{s}</span>; }
 function PriBadge({ p })    { return <span className={`badge badge-${p}`}>{p}</span>; }
@@ -152,12 +153,12 @@ export default function Tasks({ onCountChange }) {
               <tr className="empty-row"><td colSpan={7}>No tasks found</td></tr>
             ) : tasks.map(t => (
               <tr key={t._id}>
-                <td style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{t._id}</td>
+                <td><CopyId id={t._id} /></td>
                 <td><b>{t.title}</b></td>
                 <td><StatusBadge s={t.status} /></td>
                 <td><PriBadge p={t.priority} /></td>
                 <td>{fmtDate(t.dueDate)}</td>
-                <td style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{t.projectId ? String(t.projectId) : '—'}</td>
+                <td><CopyId id={t.projectId} /></td>
                 <td><button className="btn btn-ghost btn-sm" onClick={() => openTask(t._id)}>View</button></td>
               </tr>
             ))}
@@ -187,7 +188,7 @@ export default function Tasks({ onCountChange }) {
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Due: {fmtDate(modal.task.dueDate)}</div>
             </div>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>{modal.task.description || 'No description'}</p>
-            <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>ID: {modal.task._id}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>ID: <CopyId id={modal.task._id} /></div>
 
             <hr className="divider" />
             <h3 style={{ fontSize: 14, marginBottom: 12 }}>Comments</h3>

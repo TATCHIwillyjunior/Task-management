@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { req } from '../api';
 import { useToast } from '../components/Toast';
+import CopyId from '../components/CopyId';
 
 export default function Users() {
   const toast = useToast();
@@ -94,7 +95,7 @@ export default function Users() {
                     {u.role || 'member'}
                   </span>
                 </td>
-                <td style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{u._id}</td>
+                <td><CopyId id={u._id} /></td>
                 <td><button className="btn btn-danger btn-sm" onClick={() => remove(u._id)}>Delete</button></td>
               </tr>
             ))}

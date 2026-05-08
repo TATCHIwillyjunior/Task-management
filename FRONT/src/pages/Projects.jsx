@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { req } from '../api';
 import { useToast } from '../components/Toast';
+import CopyId from '../components/CopyId';
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString() : '—';
 const shortId = id => { const s = String(id || ''); return s.length > 12 ? '…' + s.slice(-8) : s; };
@@ -85,10 +86,10 @@ export default function Projects() {
               <tr className="empty-row"><td colSpan={6}>No projects found</td></tr>
             ) : projects.map(p => (
               <tr key={p._id}>
-                <td style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{p._id}</td>
+                <td><CopyId id={p._id} /></td>
                 <td><b>{p.name}</b></td>
                 <td style={{ color: 'var(--muted)' }}>{p.description || '—'}</td>
-                <td style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'monospace' }}>{p.createdBy ? String(p.createdBy) : '—'}</td>
+                <td><CopyId id={p.createdBy} /></td>
                 <td style={{ fontSize: 12, color: 'var(--muted)' }}>{fmtDate(p.createdAt)}</td>
                 <td><button className="btn btn-danger btn-sm" onClick={() => remove(p._id)}>Delete</button></td>
               </tr>
