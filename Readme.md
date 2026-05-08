@@ -351,3 +351,10 @@ The Dockerfile uses a **multi-stage build** (builder → production) with a non-
 - **`scripts/seed-db.js`** — Database seeder for all three databases with sample users, tasks, and Redis data.
 
 - **`package.json`** — Added `seed` script (`node scripts/seed-db.js`); confirmed all runtime dependencies.
+
+## MongoDB Integration - dev-kelyan/mongodb
+
+This branch, developed by **Kelyan**, implements MongoDB as the primary database 
+for the Task Management System. It handles user data, task storage, and project 
+management using Mongoose for schema modeling. The connection is managed through 
+a dedicated configuration file with environment-based credentials stored in `.env`.
